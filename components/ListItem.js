@@ -2,7 +2,6 @@ import {
   View,
   StyleSheet,
   Text,
-  StatusBar,
   Pressable,
   Image,
 } from "react-native";
@@ -22,6 +21,16 @@ function Item({ item }) {
 
   return (
     <View style={styles.item}>
+      {/* Зображення слова або дефолтне зображення */}
+      <Image
+        style={styles.image}
+        source={
+          item.imageUri
+            ? { uri: item.imageUri }
+            : require("../assets/no-image.png")
+        }
+      />
+
       <Pressable disabled={!item.audio} onPress={() => playSound(item.audio)}>
         <View style={styles.iconContainer}>
           <Ionicons
@@ -35,6 +44,7 @@ function Item({ item }) {
           />
         </View>
       </Pressable>
+
       <Pressable
         style={styles.textContainer}
         onPress={() => navigation.navigate("EditWord", { wordData: item })}
@@ -51,6 +61,7 @@ function Item({ item }) {
         </View>
         <Text style={styles.definition}>{item.meaning}</Text>
       </Pressable>
+
       <Pressable
         style={styles.iconContainer}
         onPress={() => dispatch(wordsLearningActions.removeWord(item.word))}
@@ -94,8 +105,11 @@ function getStyles(colors) {
       paddingBottom: 5,
     },
     image: {
-      width: 60,
-      aspectRatio: 1,
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      marginRight: 5,
+      resizeMode: "cover",
     },
   });
 }

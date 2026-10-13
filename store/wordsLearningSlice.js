@@ -1,5 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { createSelector } from "@reduxjs/toolkit";
+import { createSlice, createSelector } from "@reduxjs/toolkit";
 import { INITIAL_FORGETTING_SPAN } from "../constants";
 
 const initialState = {
@@ -8,54 +7,88 @@ const initialState = {
 
 const wordsLearningSlice = createSlice({
   name: "words",
-  initialState: initialState,
+  initialState,
   reducers: {
     updateWordLearnInfo(state, action) {
       const wordInfoToUpdate = state.words.find(
         (wordInfo) => wordInfo.word === action.payload
       );
-      const milisecondsNow = new Date().getTime();
-      wordInfoToUpdate.dateForgets = new Date(
-        milisecondsNow + wordInfoToUpdate.forgettingSpan
-      ).getTime();
+
+      if (!wordInfoToUpdate) return;
+
+      const now = Date.now();
+
+      wordInfoToUpdate.dateForgets =
+        now + wordInfoToUpdate.forgettingSpan;
+
       wordInfoToUpdate.forgettingSpan *= 2;
-      wordInfoToUpdate.dateTotallyForgets = new Date(
-        milisecondsNow + wordInfoToUpdate.forgettingSpan
-      ).getTime();
+
+      wordInfoToUpdate.dateTotallyForgets =
+        now + wordInfoToUpdate.forgettingSpan;
+
       wordInfoToUpdate.status = 2;
     },
+
     addWord(state, action) {
-      if (state.words.find((el) => el.word === action.payload.word)) return;
-      const nowMiliseconds = new Date().getTime();
-      const wordData = { ...action.payload };
-      wordData.dateForgets = new Date(
-        nowMiliseconds - INITIAL_FORGETTING_SPAN
-      ).getTime();
-      wordData.dateTotallyForgets = nowMiliseconds;
-      wordData.forgettingSpan = INITIAL_FORGETTING_SPAN;
-      wordData.status = 0;
+      if (state.words.some((word) => word.word === action.payload.word)) {
+        return;
+      }
+
+      const now = Date.now();
+      const selectedImage =
+        action.payload.imageUri ?? action.payload.image;
+
+      const wordData = {
+        ...action.payload,
+        image: selectedImage,
+        imageUri: selectedImage,
+        dateForgets: now - INITIAL_FORGETTING_SPAN,
+        dateTotallyForgets: now,
+        forgettingSpan: INITIAL_FORGETTING_SPAN,
+        status: 0,
+      };
+
       state.words.push(wordData);
     },
+
     updateWord(state, action) {
-      const wordIndexToUpdate = state.words.findIndex(
+      const index = state.words.findIndex(
         (wordInfo) => wordInfo.word === action.payload.word
       );
-      state.words[wordIndexToUpdate] = {
-        ...state.words[wordIndexToUpdate],
+
+      if (index === -1) return;
+
+      const existingWord = state.words[index];
+      const selectedImage =
+        action.payload.imageUri ??
+        action.payload.image ??
+        existingWord.imageUri ??
+        existingWord.image ??
+        null;
+
+      state.words[index] = {
+        ...existingWord,
         ...action.payload,
+        image: selectedImage,
+        imageUri: selectedImage,
       };
     },
+
     removeWord(state, action) {
-      state.words = state.words.filter((item) => item.word != action.payload);
+      state.words = state.words.filter(
+        (item) => item.word !== action.payload
+      );
     },
+
     updateStatuses(state) {
-      const milisecondsNow = new Date().getTime();
+      const now = Date.now();
+
       for (const wordInfo of state.words) {
-        if (wordInfo.dateTotallyForgets <= milisecondsNow) {
+        if (wordInfo.dateTotallyForgets <= now) {
           wordInfo.status = 0;
         } else if (
-          wordInfo.dateForgets <= milisecondsNow &&
-          wordInfo.dateTotallyForgets > milisecondsNow
+          wordInfo.dateForgets <= now &&
+          wordInfo.dateTotallyForgets > now
         ) {
           wordInfo.status = 1;
         }
